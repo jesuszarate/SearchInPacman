@@ -126,35 +126,36 @@ def breadthFirstSearch(problem):
     from game import Directions    
     
     stack = util.Queue()
-    #stack = util.Stack()
 
     start = problem.getStartState()
     stack.push((start, None, 1))
 
     visited = [start]
-    camefrom = []
+    camefrom = {} # Camefrom (successor, camefrom)
 
     path = [] # path that solves the problem
 
     while not stack.isEmpty():
         current = stack.pop()
         
-        if current[0] != start:
-            path.append(current[1])
-            visited.append(successor[0])
-
-        if(problem.isGoalState(current[0])):
-            print "FOUND THE GOAL"
-            print path
-            return path            
+        if(problem.isGoalState(current[0])):        
+            goal = current
+            break
 
         for successor in problem.getSuccessors(current[0]):
             if successor[0] not in visited:
                 stack.push(successor)
-                
-    #print visited
-    return  []
-#    util.raiseNotDefined()
+                visited.append(successor[0])
+                camefrom.update({successor : current})
+
+    # Retrace steps by the states ancestors
+    c = goal;
+    while c[0] != problem.getStartState():        
+        path.insert(0, c[1])
+        c = camefrom[c]
+
+    return path
+
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
