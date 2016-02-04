@@ -112,14 +112,6 @@ def depthFirstSearch(problem):
 
         for successor in problem.getSuccessors(current[0]):
             if successor[0] not in visited:
-                #print 'Cost: ' + successor[0] + ' : ' + str(successor[2])
-                print 'Cost: ', successor
-
-                """
-                if problem.isGoalState(successor[0]):
-                    goal = current
-                    break
-                """
                 frontier.push(successor) 
                 camefrom.update({successor : current})
 
@@ -166,45 +158,35 @@ def uniformCostSearch(problem):
     frontier = util.PriorityQueue()
 
     start = problem.getStartState()
-    frontier.push((start, None, 1), 0)
+    startState = (start, None, 1)
+    frontier.push(startState, 0)
 
     visited = [start]
-    distance = {}
+    distance = {startState:0}
     camefrom = {} # Camefrom (successor, camefrom)
 
     path = [] # path that solves the problem
 
     while not frontier.isEmpty():
         current = frontier.pop()
+        #import pdb; pdb.set_trace()
 
-        #goal = None
         if(problem.isGoalState(current[0])):
             goal = current
             break
 
+        #visited.append(current[0])
+
         for successor in problem.getSuccessors(current[0]):
             if successor[0] not in visited:
-                frontier.push(successor, current[2] + successor[2]) # This might need to get replaced
-                visited.append(successor[0])
-                camefrom.update({successor : current})
+                tempCost = distance[current] + successor[2]
+                
+                if successor not in distance or tempCost < distance[successor]:
+                    distance[successor] = tempCost
+                    frontier.push(successor, tempCost)
+                    visited.append(successor[0])
+                    camefrom.update({successor : current})
         
-        '''
-        neighbors = problem.getSuccessors(current[0])
-        for neighbor in neighbors:
-
-            if neighbor[0] not in visited:
-                frontier.push(neighbor, neighbor[2])
-                tempCost = 0
-
-                if neighbor not in distance:
-                    distance[neighbor] = neighbor[2]
-                else:
-                    tempCost = distance[neighbor] + neighbor[2]
-                    
-                if tempCost < distance[neighbor]:
-                    distance[neighbor] = tempCost
-                    camefrom[neighbor] = current
-        '''
     # Retrace steps by the states ancestors
     return buildPath(problem.getStartState(), goal, camefrom)
 
