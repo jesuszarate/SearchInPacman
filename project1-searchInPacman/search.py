@@ -158,7 +158,7 @@ def uniformCostSearch(problem):
     frontier = util.PriorityQueue()
 
     start = problem.getStartState()
-    startState = (start, None, 1)
+    startState = (start, None, 0)
     frontier.push(startState, 0)
 
     visited = [start]
@@ -173,22 +173,19 @@ def uniformCostSearch(problem):
 
         if(problem.isGoalState(current[0])):
             goal = current
-            break
+            # Retrace steps by the states ancestors
+            return buildPath(problem.getStartState(), goal, camefrom)
 
-        #visited.append(current[0])
+        fvisited.append(current[0])
 
         for successor in problem.getSuccessors(current[0]):
             if successor[0] not in visited:
                 tempCost = distance[current] + successor[2]
-                
                 if successor not in distance or tempCost < distance[successor]:
                     distance[successor] = tempCost
                     frontier.push(successor, tempCost)
-                    visited.append(successor[0])
-                    camefrom.update({successor : current})
-        
-    # Retrace steps by the states ancestors
-    return buildPath(problem.getStartState(), goal, camefrom)
+                    camefrom[successor] = current
+                    visited.append(current[0])
 
 
 def nullHeuristic(state, problem=None):
@@ -201,54 +198,41 @@ def nullHeuristic(state, problem=None):
 def aStarSearch(problem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
     "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
-    """ ATEMPT ON A*
+
     frontier = util.PriorityQueue()
 
     start = problem.getStartState()
-    startNode = (start, None, 1) # Create a starting node (looks like a successor
+    startState = (start, None, 0)
+    frontier.push(startState, 0)
 
-    frontier.push(startNode, 1) # Add start node to frontier
-
-    visited = [start] # Mark start node as visited
-
+    visited = {start:True}
+    distance = {startState:0}
     camefrom = {} # Camefrom (successor, camefrom)
 
-    path = [] # path that solves the problem
+    path = [] # path to retrace steps
 
-    cost = {startNode:0}# Score to best path
-    hCost = {start : heuristic(start, problem)}
-    
     while not frontier.isEmpty():
         current = frontier.pop()
-        
-        if(problem.isGoalState(current[0])):        
-            goal = current # Don't break maybe just record it
-            break
+        #import pdb; pdb.set_trace()
 
-        #visited.append(neighbor[0]) # Mark as visited
-        visited.append(current[0])
+        if(problem.isGoalState(current[0])):
+            goal = current            
+            # Retrace steps by the states ancestors
+            return buildPath(problem.getStartState(), goal, camefrom)    
 
-        neighbors = problem.getSuccessors(current[0])
-        for neighbor in neighbors:
-            if neighbor[0] not in visited:
 
-                # The combined cost of path and heuristic should be the priority for the queue
-                neighborCost = neighbor[2]
-                tempScore = cost[current] + neighborCost # score of the current's score + the distance to the neighbor
+        for successor in problem.getSuccessors(current[0]):
+            if successor[0] not in visited:       
+                g = distance[current] + successor[2]
+                h = heuristic(successor[0], problem)
 
-                if neighbor not in frontier:
-                    frontier.push(neighbor, neighbor[2])
-                elif tempScore < hCost[neighbor]:
-                    camefrom.update({neighbor : current})
-                    cost[neighbor] = tempScore
-                    nState = neighbor[0]
-                    hCost[neighbor] = score[neighbor] + heuristic(nState, problem)
-                                        
+                visited[current[0]] = True
+                tempCost = g + h
+                if successor not in distance:
+                    distance[successor] = g
+                    frontier.push(successor, tempCost)
+                    camefrom.update({successor : current})
 
-    # Retrace steps by the states ancestors
-    return buildPath(problem.getStartState, goal, camefrom)
-"""
 
 """
 A* search
