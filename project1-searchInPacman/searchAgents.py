@@ -316,7 +316,6 @@ class CornersProblem(search.SearchProblem):
             state, 'action' is the action required to get there, and 'stepCost'
             is the incremental cost of expanding to that successor
         """
-
         currX, currY = state
         successors = []
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
@@ -366,8 +365,21 @@ def cornersHeuristic(state, problem):
     corners = problem.corners # These are the corner coordinates
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
-    "*** YOUR CODE HERE ***"
-    return 0 # Default to trivial solution
+    heuristic = 0
+    manhatDist = lambda pa, pb: abs(pa[0] - pb[0]) + abs(pa[1] - pb[1])
+
+    if state not in corners:
+      closestCorner = corners[0]
+      closestManhat = manhatDist(state, closestCorner)
+      for corner in corners:
+        manhat = manhatDist(state, corner)
+        if manhat < closestManhat:
+          closestCorner = corner
+          closestManhat = manhat
+
+      heuristic = closestManhat
+    heuristic = max(heuristic, 0) # make sure no negative value
+    return heuristic
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"

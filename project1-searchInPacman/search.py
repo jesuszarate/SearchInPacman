@@ -17,6 +17,7 @@ In search.py, you will implement generic search algorithms which are called by
 Pacman agents (in searchAgents.py).
 """
 
+from game import Directions
 import util
 
 class SearchProblem:
@@ -67,10 +68,10 @@ def tinyMazeSearch(problem):
     Returns a sequence of moves that solves tinyMaze.  For any other maze, the
     sequence of moves will be incorrect, so only use this for tinyMaze.
     """
-    from game import Directions
     s = Directions.SOUTH
     w = Directions.WEST
     return  [s, s, w, s, w, w, s, w]
+
 
 def depthFirstSearch(problem):
     """
@@ -81,36 +82,26 @@ def depthFirstSearch(problem):
 
     To get started, you might want to try some of these simple commands to
     understand the search problem that is being passed in:
-
-    print "Start:", problem.getStartState()
-    print "Is the start a goal?", problem.isGoalState(problem.getStartState())
-    print "Start's successors:", problem.getSuccessors(problem.getStartState())
     """
-    from game import Directions    
-    
     frontier = util.Stack()
 
     start = problem.getStartState()
     frontier.push((start, None, 1))
+    visited = set([start])
 
-    visited = [start]
     camefrom = {} # Camefrom [successor, camefrom]
-
-    path = [] # path that solves the problem
 
     while not frontier.isEmpty():
         current = frontier.pop()
-        
-        if(problem.isGoalState(current[0])):        
+
+        if problem.isGoalState(current[0]):
             goal = current
             break
 
-        if current[0] not in visited:
-                visited.append(current[0])
-
         for successor in problem.getSuccessors(current[0]):
             if successor[0] not in visited:
-                frontier.push(successor) 
+                frontier.push(successor)
+                visited.add(current[0])
                 camefrom.update({successor : current})
 
     # Retrace steps by the states ancestors
@@ -120,29 +111,27 @@ def depthFirstSearch(problem):
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
-    from game import Directions    
-    
     frontier = util.Queue()
 
     start = problem.getStartState()
     frontier.push((start, None, 1))
+    visited = set([start])
 
-    visited = [start]
     camefrom = {} # Camefrom (successor, camefrom)
-
-    path = [] # path that solves the problem
 
     while not frontier.isEmpty():
         current = frontier.pop()
-        
-        if(problem.isGoalState(current[0])):
+        currentPos = current[0]
+
+        if problem.isGoalState(currentPos):
             goal = current
             break
 
-        for successor in problem.getSuccessors(current[0]):
-            if successor[0] not in visited:
+        for successor in problem.getSuccessors(currentPos):
+            successorPos = successor[0]
+            if successorPos not in visited:
                 frontier.push(successor)
-                visited.append(successor[0])
+                visited.add(successorPos)
                 camefrom.update({successor : current})
 
     # Retrace steps by the states ancestors
@@ -157,13 +146,13 @@ def uniformCostSearch(problem):
     frontier.push(startState, 0)
     distance = {startPos: 0}
 
-    visited = []
+    visited = set([])
     camefrom = {}
 
     while not frontier.isEmpty():
       current = frontier.pop()
       currentPos = current[0]
-      visited.append(currentPos)
+      visited.add(currentPos)
 
       if problem.isGoalState(currentPos):
         goal = current
@@ -212,13 +201,13 @@ def aStarSearch(problem, heuristic=nullHeuristic):
         #import pdb; pdb.set_trace()
 
         if(problem.isGoalState(current[0])):
-            goal = current            
+            goal = current
             # Retrace steps by the states ancestors
-            return buildPath(problem.getStartState(), goal, camefrom)    
+            return buildPath(problem.getStartState(), goal, camefrom)
 
 
         for successor in problem.getSuccessors(current[0]):
-            if successor[0] not in visited:       
+            if successor[0] not in visited:
                 g = distance[current] + successor[2]
                 h = heuristic(successor[0], problem)
 
@@ -229,16 +218,6 @@ def aStarSearch(problem, heuristic=nullHeuristic):
                     frontier.push(successor, tempCost)
                     camefrom.update({successor : current})
 
-
-"""
-A* search
-
-- Expand on the lowest cost node
-- Once a node has been expanded add it to a closed node list
-- Don't exit when a goal node is found, but rather add it to the queue and when it becomes the lowest cost and it gets dequed then that's the goal.
-
-"""
-
     
 def buildPath(start, goal, camefrom):
     path = []
@@ -246,7 +225,6 @@ def buildPath(start, goal, camefrom):
     while c[0] != start:
         path.insert(0, c[1])
         c = camefrom[c]
-
     return path
 
 # Abbreviations
