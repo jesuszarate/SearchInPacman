@@ -86,9 +86,7 @@ def depthFirstSearch(problem):
     print "Is the start a goal?", problem.isGoalState(problem.getStartState())
     print "Start's successors:", problem.getSuccessors(problem.getStartState())
     """
-    "*** YOUR CODE HERE ***"
     from game import Directions    
-    #return [Directions.NORTH]
     
     frontier = util.Stack()
 
@@ -122,7 +120,6 @@ def depthFirstSearch(problem):
 
 def breadthFirstSearch(problem):
     """Search the shallowest nodes in the search tree first."""
-    "*** YOUR CODE HERE ***"
     from game import Directions    
     
     frontier = util.Queue()
@@ -138,7 +135,7 @@ def breadthFirstSearch(problem):
     while not frontier.isEmpty():
         current = frontier.pop()
         
-        if(problem.isGoalState(current[0])):        
+        if(problem.isGoalState(current[0])):
             goal = current
             break
 
@@ -154,38 +151,37 @@ def breadthFirstSearch(problem):
 
 def uniformCostSearch(problem):
     """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"        
     frontier = util.PriorityQueue()
-
-    start = problem.getStartState()
-    startState = (start, None, 0)
+    startPos = problem.getStartState()
+    startState = (startPos, None, 0)
     frontier.push(startState, 0)
+    distance = {startPos: 0}
 
-    visited = [start]
-    distance = {startState:0}
-    camefrom = {} # Camefrom (successor, camefrom)
-
-    path = [] # path that solves the problem
+    visited = []
+    camefrom = {}
 
     while not frontier.isEmpty():
-        current = frontier.pop()
-        #import pdb; pdb.set_trace()
+      current = frontier.pop()
+      currentPos = current[0]
+      visited.append(currentPos)
 
-        if(problem.isGoalState(current[0])):
-            goal = current
-            # Retrace steps by the states ancestors
-            return buildPath(problem.getStartState(), goal, camefrom)
+      if problem.isGoalState(currentPos):
+        goal = current
+        break
 
-        fvisited.append(current[0])
+      for neighbor in problem.getSuccessors(currentPos):
+        neighborPos = neighbor[0]
+        neighborTotalCost = distance[currentPos] + neighbor[2]
+        if neighborPos in distance and distance[neighborPos] > neighborTotalCost:
+          distance[neighborPos] = neighborTotalCost
+          camefrom[neighbor] = current
+        if neighborPos not in visited:
+          distance[neighborPos] = neighborTotalCost
+          camefrom[neighbor] = current
+          frontier.push(neighbor, neighborTotalCost)
 
-        for successor in problem.getSuccessors(current[0]):
-            if successor[0] not in visited:
-                tempCost = distance[current] + successor[2]
-                if successor not in distance or tempCost < distance[successor]:
-                    distance[successor] = tempCost
-                    frontier.push(successor, tempCost)
-                    camefrom[successor] = current
-                    visited.append(current[0])
+    ## Retrace steps by the states ancestors
+    return buildPath(startPos, goal, camefrom)
 
 
 def nullHeuristic(state, problem=None):
