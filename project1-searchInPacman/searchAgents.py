@@ -282,7 +282,6 @@ class CornersProblem(search.SearchProblem):
 
         self.walls = startingGameState.getWalls()
         self.startingPosition = startingGameState.getPacmanPosition()
-        self.visitedCorners = []
         top, right = self.walls.height-2, self.walls.width-2
         self.corners = ((1,1), (1,top), (right, 1), (right, top))
         for corner in self.corners:
@@ -296,15 +295,16 @@ class CornersProblem(search.SearchProblem):
         Returns the start state (in your state space, not the full Pacman state
         space)
         """
-        return self.startingPosition
+        return self.startingPosition, []
 
     def isGoalState(self, state):
         """
         Returns whether this search state is a goal state of the problem.
         """
-        if state not in self.visitedCorners and state in self.corners:
-          self.visitedCorners.append(state)
-        return len(self.visitedCorners) == 4
+        pos, visited = state
+        if pos not in visited and pos in self.corners:
+          visited.append(pos)
+        return len(visited) == 4
 
     def getSuccessors(self, state):
         """
@@ -316,7 +316,8 @@ class CornersProblem(search.SearchProblem):
             state, 'action' is the action required to get there, and 'stepCost'
             is the incremental cost of expanding to that successor
         """
-        currX, currY = state
+        pos, visited = state
+        currX, currY = pos
         successors = []
         for action in [Directions.NORTH, Directions.SOUTH, Directions.EAST, Directions.WEST]:
             # Add a successor state to the successor list if the action is legal
@@ -330,7 +331,13 @@ class CornersProblem(search.SearchProblem):
             nextX, nextY = int(currX + dx), int(currY + dy)
             hitsWall = self.walls[nextX][nextY]
             if not hitsWall:
-                successors.append(((nextX, nextY), action, 1))
+                nextPos = (nextX, nextY)
+                if nextPos not in visited:
+                  if nextPos in self.corners:
+                    nextState = (nextPos, [nextPos] + visited)
+                  else:
+                    nextState = (nextPos, visited)
+                  successors.append((nextState, action, 1))
 
         self._expanded += 1 # DO NOT CHANGE
         return successors
@@ -365,20 +372,29 @@ def cornersHeuristic(state, problem):
     corners = problem.corners # These are the corner coordinates
     walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
 
+    # TODO: Currently doesn't account for walls...
     heuristic = 0
+
+    # calculates abs(a_x - b_x) + abs(a_y - b_y)
     manhatDist = lambda pa, pb: abs(pa[0] - pb[0]) + abs(pa[1] - pb[1])
 
+    # heuristic is 0 if the state is one of the corners
     if state not in corners:
-      closestCorner = corners[0]
-      closestManhat = manhatDist(state, closestCorner)
-      for corner in corners:
-        manhat = manhatDist(state, corner)
-        if manhat < closestManhat:
-          closestCorner = corner
-          closestManhat = manhat
+        closestCorner = corners[0]
+        closestManhat = manhatDist(state, closestCorner)
 
-      heuristic = closestManhat
-    heuristic = max(heuristic, 0) # make sure no negative value
+        # find the closest corner and get manhattan distance
+        # to that corner
+        for corner in corners:
+            manhat = manhatDist(state, corner)
+            if manhat < closestManhat:
+                closestCorner = corner
+                closestManhat = manhat
+
+        heuristic = closestManhat
+
+    # make sure no negative value
+    heuristic = max(heuristic, 0)
     return heuristic
 
 class AStarCornersAgent(SearchAgent):
@@ -471,9 +487,19 @@ def foodHeuristic(state, problem):
     Subsequent calls to this heuristic can access
     problem.heuristicInfo['wallCount']
     """
+    walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
+
+    # TODO: Currently doesn't account for walls...
     position, foodGrid = state
-    "*** YOUR CODE HERE ***"
-    return 0
+    x, y = position
+    heuristic = 0
+
+    # calculates abs(a_x - b_x) + abs(a_y - b_y)
+    manhatDist = lambda pa, pb: abs(pa[0] - pb[0]) + abs(pa[1] - pb[1])
+
+    # make sure no negative value
+    heuristic = max(heuristic, 0)
+    return heuristic
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
