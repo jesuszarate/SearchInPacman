@@ -369,33 +369,39 @@ def cornersHeuristic(state, problem):
     shortest path from the state to a goal of the problem; i.e.  it should be
     admissible (as well as consistent).
     """
-    corners = problem.corners # These are the corner coordinates
-    walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
-
-    # TODO: Currently doesn't account for walls...
     heuristic = 0
+    pos, visited = state
+    visited = list(visited)
 
     # calculates abs(a_x - b_x) + abs(a_y - b_y)
     manhatDist = lambda pa, pb: abs(pa[0] - pb[0]) + abs(pa[1] - pb[1])
 
-    # heuristic is 0 if the state is one of the corners
-    if state not in corners:
-        closestCorner = corners[0]
-        closestManhat = manhatDist(state, closestCorner)
+    # find the total manhatted distance from the current point to the
+    # closest corner, then from that corner to that next closest corner
+    # until all of the corners are accounted for
+    while not len(visited) == 4:
+      # find the closest unvisited corner and get manhattan distance
+      # to that corner
+      unvisitedCorners = list(set(visited).symmetric_difference(set(problem.corners)))
 
-        # find the closest corner and get manhattan distance
-        # to that corner
-        for corner in corners:
-            manhat = manhatDist(state, corner)
-            if manhat < closestManhat:
-                closestCorner = corner
-                closestManhat = manhat
+      # find the closest corner with smallest distance
+      closestCorner = unvisitedCorners[0]
+      closestManhat = manhatDist(pos, closestCorner)
+      for corner in unvisitedCorners:
+        manhat = manhatDist(pos, corner)
+        if manhat < closestManhat:
+          closestCorner = corner
+          closestManhat = manhat
 
-        heuristic = closestManhat
+      # sum up heuristic with distance to next closest point
+      heuristic = heuristic + closestManhat
+      pos = closestCorner
+      visited.append(pos)
 
     # make sure no negative value
     heuristic = max(heuristic, 0)
     return heuristic
+
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -459,6 +465,7 @@ class AStarFoodSearchAgent(SearchAgent):
         self.searchFunction = lambda prob: search.aStarSearch(prob, foodHeuristic)
         self.searchType = FoodSearchProblem
 
+
 def foodHeuristic(state, problem):
     """
     Your heuristic for the FoodSearchProblem goes here.
@@ -487,19 +494,56 @@ def foodHeuristic(state, problem):
     Subsequent calls to this heuristic can access
     problem.heuristicInfo['wallCount']
     """
-    walls = problem.walls # These are the walls of the maze, as a Grid (game.py)
-
-    # TODO: Currently doesn't account for walls...
-    position, foodGrid = state
-    x, y = position
     heuristic = 0
+    pac, food = state
+    foodList = food.asList()
 
-    # calculates abs(a_x - b_x) + abs(a_y - b_y)
-    manhatDist = lambda pa, pb: abs(pa[0] - pb[0]) + abs(pa[1] - pb[1])
+    if pac not in foodList and len(foodList) > 0:
+      if 'visitedFood' in problem.heuristicInfo:
+        visited = problem.heuristicInfo['visitedFood']
+      else:
+        visited = []
 
-    # make sure no negative value
-    heuristic = max(heuristic, 0)
+      # calculates abs(a_x - b_x) + abs(a_y - b_y)
+      manhatDist = lambda pa, pb: abs(pa[0] - pb[0]) + abs(pa[1] - pb[1])
+
+      # find the total manhatted distance from the current point to the
+      # closest food, then from that food to that next closest food, i
+      # times. on each additional food, decrease the weight by i
+      i = 1.0
+      iterations = 10.0
+      while i < iterations:
+        # find the closest unvisited food and get manhattan distance
+        # to that food
+        unvisitedFood = list(set(visited).symmetric_difference(set(foodList)))
+
+        if len(unvisitedFood) > 0:
+          # find the closest food with smallest distance
+          closestFood = unvisitedFood[0]
+          closestManhat = manhatDist(pac, closestFood)
+          for food in unvisitedFood:
+            manhat = manhatDist(pac, food)
+            if manhat < closestManhat:
+              closestFood = food
+              closestManhat = manhat
+
+          # sum up heuristic with distance to next closest point
+          # give subsequent food positions less weight
+          heuristic = heuristic + int(closestManhat / i)
+          pac = closestFood
+          visited.append(pac)
+          i = i + 0.09
+        else:
+          i = iterations + 1.0
+
+    elif pac in foodList:
+      if 'visitedFood' in problem.heuristicInfo:
+        problem.heuristicInfo['visitedFood'].append(pac)
+      else:
+        problem.heuristicInfo.update({'visitedFood': []})
+
     return heuristic
+
 
 class ClosestDotSearchAgent(SearchAgent):
     "Search for all food using a sequence of searches"
